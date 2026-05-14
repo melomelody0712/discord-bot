@@ -18,6 +18,7 @@ class MyClient(discord.Client):
     async def setup_hook(self):
         await self.tree.sync()
         self.loop.create_task(daily_reminder())
+        self.loop.create_task(deadline_notifier())
 
     async def on_ready(self):
         print(f"ログイン成功: {self.user}")
@@ -25,7 +26,8 @@ class MyClient(discord.Client):
 client = MyClient()
 tree = client.tree
 
-NOTIFY_CHANNEL_ID = 1484197953668386967  # ←後で説明
+NOTIFY_CHANNEL_ID = 1484208607116394618
+# 1484197953668386967  # ←後で説明
 TASKS_FILE = "tasks.json"
 
 
@@ -50,6 +52,7 @@ def get_next_id():
 
 # タスク追加
 @tree.command(name="task_add", description="タスクを追加")
+@app_commands.describe(deadline="例: 2026-05-15 17:00（形式: YYYY-MM-DD HH:MM）")
 async def task_add(interaction: discord.Interaction, user: discord.User, content: str, deadline: str):
     try:
         datetime.strptime(deadline, "%Y-%m-%d %H:%M")
@@ -146,10 +149,46 @@ async def daily_reminder():
             except Exception as e:
                 print(f"[daily_reminder] タスク{i}の処理中にエラー: {e}")
 
+        msg_overdue = "🚨【期限切れ】\n"
+        has_overdue = False
+
+        for i, t in enumerate(tasks):
+            try:
+                deadline = datetime.strptime(t["deadline"], "%Y-%m-%d %H:%M")
+                diff = (deadline - now).total_seconds()
+
+                if diff < 0:
+                    msg_overdue += f"[{t['id']}] {t['user_mention']} {t['content']}（{t['deadline']}）\n"
+                    has_overdue = True
+
+            except Exception as e:
+                print(f"[daily_reminder] タスク{i}の処理中にエラー: {e}")
+
+        if has_overdue:
+            await channel.send(msg_overdue)
+
         if has_3:
             await channel.send(msg_3days)
 
         if has_1:
             await channel.send(msg_1day)
+
+async def deadline_notifier():
+    await client.wait_until_ready()
+    notified = set()
+
+    while True:
+        now = datetime.now().strftime("%Y-%m-%d %H:%M")
+        channel = client.get_channel(NOTIFY_CHANNEL_ID)
+
+        for t in tasks:
+            if t["deadline"] == now and t["id"] not in notified:
+                if channel:
+                    await channel.send(
+                        f"🔔【期限】{t['user_mention']} `{t['content']}` の期限になったで！"
+                    )
+                notified.add(t["id"])
+
+        await asyncio.sleep(60)
 
 client.run(os.getenv("DISCORD_TOKEN"))
