@@ -186,7 +186,7 @@ async def deadline_notifier():
             if t["deadline"] == now and t["id"] not in notified:
                 if channel:
                     await channel.send(
-                        f"🔔【期限】{t['user_mention']} `{t['content']}` の期限になったで！"
+                        f"🔔【期限】[{t['id']}] {t['user_mention']} `{t['content']}` の期限になったで！"
                     )
                 notified.add(t["id"])
 
