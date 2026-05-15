@@ -27,7 +27,8 @@ class MyClient(discord.Client):
 client = MyClient()
 tree = client.tree
 
-NOTIFY_CHANNEL_ID = 1484208607116394618
+NOTIFY_CHANNEL_ID = 1484197953668386967
+
 
 TASKS_FILE = "tasks.json"
 
