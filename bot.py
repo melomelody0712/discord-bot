@@ -1,6 +1,7 @@
 import discord
 from discord import app_commands
 from datetime import datetime, timedelta
+from zoneinfo import ZoneInfo
 import asyncio
 import os
 import json
@@ -27,7 +28,7 @@ client = MyClient()
 tree = client.tree
 
 NOTIFY_CHANNEL_ID = 1484208607116394618
-# 1484197953668386967  # ←後で説明
+
 TASKS_FILE = "tasks.json"
 
 
@@ -113,7 +114,7 @@ async def daily_reminder():
     await client.wait_until_ready()
 
     while True:
-        now = datetime.now()
+        now = datetime.now(ZoneInfo("Asia/Tokyo")).replace(tzinfo=None)
         next_midnight = (now + timedelta(days=1)).replace(hour=0, minute=0, second=0, microsecond=0)
         wait_seconds = (next_midnight - now).total_seconds()
 
@@ -123,7 +124,7 @@ async def daily_reminder():
         if channel is None:
             continue
 
-        now = datetime.now()
+        now = datetime.now(ZoneInfo("Asia/Tokyo")).replace(tzinfo=None)
 
         msg_3days = "📅【3日前リマインド】\n"
         msg_1day = "⏰【1日前リマインド】\n"
@@ -178,7 +179,7 @@ async def deadline_notifier():
     notified = set()
 
     while True:
-        now = datetime.now().strftime("%Y-%m-%d %H:%M")
+        now = datetime.now(ZoneInfo("Asia/Tokyo")).strftime("%Y-%m-%d %H:%M")
         channel = client.get_channel(NOTIFY_CHANNEL_ID)
 
         for t in tasks:
